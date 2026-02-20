@@ -3,12 +3,17 @@
 from __future__ import annotations
 
 import os
+import pathlib
 from contextlib import asynccontextmanager
 
 import asyncpg
 import uvicorn
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+
+STATIC_DIR = pathlib.Path(__file__).parent / "static"
 
 DATABASE_URL = os.environ.get(
     "OBO_DATABASE_URL", "postgresql://nagz:nagz@localhost:5433/obo"
@@ -162,6 +167,18 @@ async def metrics():
             {"key": "total_cards", "label": "Total Cards", "value": total_cards, "unit": "count"},
         ]
     }
+
+
+# ---------------------------------------------------------------------------
+# Web UI
+# ---------------------------------------------------------------------------
+
+@app.get("/")
+async def root():
+    return FileResponse(STATIC_DIR / "index.html")
+
+
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
 # ---------------------------------------------------------------------------

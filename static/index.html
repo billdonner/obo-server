@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OBO Flashcards</title>
+<style>
+  :root {
+    --bg: #f5f5f7;
+    --card-bg: #fff;
+    --text: #1d1d1f;
+    --text-secondary: #6e6e73;
+    --accent: #0071e3;
+    --accent-hover: #0077ed;
+    --border: #d2d2d7;
+    --radius: 12px;
+    --shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--card-bg);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  header h1 {
+    font-size: 20px;
+    font-weight: 600;
+  }
+
+  #back-btn {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 4px 8px;
+  }
+
+  #back-btn:hover { text-decoration: underline; }
+
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 24px 16px;
+  }
+
+  /* Filter bar */
+  .filter-bar {
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .filter-bar label {
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+
+  .filter-bar select {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    background: var(--card-bg);
+    color: var(--text);
+    cursor: pointer;
+  }
+
+  /* Deck grid */
+  .deck-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+
+  .deck-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    border: 1px solid var(--border);
+  }
+
+  .deck-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  }
+
+  .deck-card h2 {
+    font-size: 17px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    line-height: 1.3;
+  }
+
+  .deck-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .deck-meta span {
+    background: var(--bg);
+    padding: 3px 8px;
+    border-radius: 6px;
+  }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 80px 24px;
+    color: var(--text-secondary);
+  }
+
+  .empty-state h2 {
+    font-size: 24px;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+
+  .empty-state p {
+    font-size: 16px;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+
+  /* Deck detail */
+  #detail-view { display: none; }
+
+  .detail-header {
+    margin-bottom: 24px;
+  }
+
+  .detail-header h2 {
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .detail-header .meta {
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+
+  /* Flipcard grid */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+  }
+
+  .flip-container {
+    perspective: 800px;
+    height: 200px;
+  }
+
+  .flip-card {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.5s;
+    cursor: pointer;
+  }
+
+  .flip-card.flipped {
+    transform: rotateY(180deg);
+  }
+
+  .flip-front, .flip-back {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    overflow-y: auto;
+  }
+
+  .flip-front {
+    background: var(--card-bg);
+  }
+
+  .flip-back {
+    background: #e8f0fe;
+    transform: rotateY(180deg);
+  }
+
+  .flip-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+  }
+
+  .flip-text {
+    font-size: 15px;
+    line-height: 1.4;
+  }
+
+  .card-number {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+
+  /* Loading */
+  .loading {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-secondary);
+    font-size: 15px;
+  }
+
+  /* Error */
+  .error-msg {
+    text-align: center;
+    padding: 40px;
+    color: #d00;
+    font-size: 15px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <button id="back-btn" onclick="showList()">&larr; Back</button>
+    <h1>OBO Flashcards</h1>
+  </div>
+  <span id="deck-count" style="font-size:13px;color:var(--text-secondary);"></span>
+</header>
+
+<div class="container">
+  <!-- List View -->
+  <div id="list-view">
+    <div class="filter-bar">
+      <label for="age-filter">Age Range:</label>
+      <select id="age-filter" onchange="loadDecks()">
+        <option value="">All</option>
+      </select>
+    </div>
+    <div id="deck-list"></div>
+  </div>
+
+  <!-- Detail View -->
+  <div id="detail-view">
+    <div class="detail-header">
+      <h2 id="detail-topic"></h2>
+      <div class="meta" id="detail-meta"></div>
+    </div>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">Click a card to flip it</p>
+    <div id="card-list" class="card-grid"></div>
+  </div>
+</div>
+
+<script>
+const API = '/api/v1';
+const ageFilter = document.getElementById('age-filter');
+const deckList = document.getElementById('deck-list');
+const listView = document.getElementById('list-view');
+const detailView = document.getElementById('detail-view');
+const backBtn = document.getElementById('back-btn');
+const deckCount = document.getElementById('deck-count');
+
+let knownAgeRanges = new Set();
+
+async function loadDecks() {
+  const age = ageFilter.value;
+  const params = new URLSearchParams({ limit: '200', offset: '0' });
+  if (age) params.set('age', age);
+
+  deckList.innerHTML = '<div class="loading">Loading decks...</div>';
+
+  try {
+    const res = await fetch(`${API}/decks?${params}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    // Collect age ranges for filter dropdown
+    for (const d of data.decks) {
+      if (!knownAgeRanges.has(d.age_range)) {
+        knownAgeRanges.add(d.age_range);
+        const opt = document.createElement('option');
+        opt.value = d.age_range;
+        opt.textContent = d.age_range;
+        ageFilter.appendChild(opt);
+      }
+    }
+
+    deckCount.textContent = `${data.total} deck${data.total !== 1 ? 's' : ''}`;
+
+    if (data.decks.length === 0) {
+      deckList.innerHTML = `
+        <div class="empty-state">
+          <h2>No flashcard decks yet</h2>
+          <p>Generate some decks with obo-gen and they'll appear here.</p>
+        </div>`;
+      return;
+    }
+
+    deckList.innerHTML = '<div class="deck-grid"></div>';
+    const grid = deckList.querySelector('.deck-grid');
+
+    for (const deck of data.decks) {
+      const card = document.createElement('div');
+      card.className = 'deck-card';
+      card.onclick = () => showDeck(deck.id);
+
+      const date = new Date(deck.created_at).toLocaleDateString();
+      card.innerHTML = `
+        <h2>${esc(deck.topic)}</h2>
+        <div class="deck-meta">
+          <span>Ages ${esc(deck.age_range)}</span>
+          <span>${deck.card_count} cards</span>
+          <span>${date}</span>
+        </div>`;
+      grid.appendChild(card);
+    }
+  } catch (e) {
+    deckList.innerHTML = `<div class="error-msg">Failed to load decks: ${esc(e.message)}</div>`;
+  }
+}
+
+async function showDeck(id) {
+  listView.style.display = 'none';
+  detailView.style.display = 'block';
+  backBtn.style.display = 'inline';
+  deckCount.textContent = '';
+
+  const cardList = document.getElementById('card-list');
+  cardList.innerHTML = '<div class="loading">Loading cards...</div>';
+
+  try {
+    const res = await fetch(`${API}/decks/${id}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const deck = await res.json();
+
+    document.getElementById('detail-topic').textContent = deck.topic;
+    document.getElementById('detail-meta').textContent =
+      `Ages ${deck.age_range} \u00b7 ${deck.card_count} cards` +
+      (deck.voice ? ` \u00b7 ${deck.voice}` : '');
+
+    if (deck.cards.length === 0) {
+      cardList.innerHTML = '<div class="empty-state"><p>This deck has no cards.</p></div>';
+      return;
+    }
+
+    cardList.innerHTML = '';
+    for (const c of deck.cards) {
+      const container = document.createElement('div');
+      container.className = 'flip-container';
+      container.innerHTML = `
+        <div class="flip-card" onclick="this.classList.toggle('flipped')">
+          <div class="flip-front">
+            <span class="card-number">#${c.position}</span>
+            <div class="flip-label">Question</div>
+            <div class="flip-text">${esc(c.question)}</div>
+          </div>
+          <div class="flip-back">
+            <span class="card-number">#${c.position}</span>
+            <div class="flip-label">Answer</div>
+            <div class="flip-text">${esc(c.answer)}</div>
+          </div>
+        </div>`;
+      cardList.appendChild(container);
+    }
+  } catch (e) {
+    cardList.innerHTML = `<div class="error-msg">Failed to load deck: ${esc(e.message)}</div>`;
+  }
+}
+
+function showList() {
+  detailView.style.display = 'none';
+  listView.style.display = 'block';
+  backBtn.style.display = 'none';
+  loadDecks();
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// Initial load
+loadDecks();
+</script>
+</body>
+</html>
