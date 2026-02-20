@@ -40,10 +40,12 @@ Tables are created and managed by `~/obo-gen` — this server is read-only.
 The OBO ecosystem has three repos that must stay in sync:
 - `~/obo-server` — this API server (reads from Postgres, serves decks)
 - `~/obo-gen` — Swift CLI generator (writes decks to Postgres)
-- `~/obo` — SwiftUI iOS app (consumes API)
+- `~/obo-ios` — SwiftUI iOS app (consumes API)
+
+Hub repo: `~/obo` (docs/planning only, no code)
 
 **After any API change in obo-server:**
-1. Update `~/obo` iOS `FlashcardStore.swift` and `Models.swift` if affected
+1. Update `~/obo-ios` `FlashcardStore.swift` and `Models.swift` if affected
 
 | Change | Action |
 |--------|--------|
