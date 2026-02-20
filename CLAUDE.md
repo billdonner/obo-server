@@ -35,13 +35,22 @@ Override with `OBO_DATABASE_URL` env var. Default: `postgresql://nagz:nagz@local
 
 Tables are created and managed by `~/obo-gen` — this server is read-only.
 
-## Cross-Project Integration
+## Cross-Project Sync (OBO Ecosystem)
+
+The OBO ecosystem has three repos that must stay in sync:
+- `~/obo-server` — this API server (reads from Postgres, serves decks)
+- `~/obo-gen` — Swift CLI generator (writes decks to Postgres)
+- `~/obo` — SwiftUI iOS app (consumes API)
+
+**After any API change in obo-server:**
+1. Update `~/obo` iOS `FlashcardStore.swift` and `Models.swift` if affected
 
 | Change | Action |
 |--------|--------|
 | obo-gen schema changes | Endpoints may need updating |
+| API response shape changes | Update obo iOS models |
 | Port changes | Update `OBO_PORT` env var and server-monitor config |
-| server-monitor | Can switch OBO Decks card from postgres collector to HTTP collector at `http://127.0.0.1:9810/metrics` |
+| server-monitor | OBO Server card polls `http://127.0.0.1:9810/metrics` |
 
 ## Architecture
 - Single-file FastAPI app (`obo_server.py`)
