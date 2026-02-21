@@ -1,11 +1,16 @@
 # obo-server
 
-Read-only REST API serving obo flashcard decks from Postgres. Consumed by the obo iOS app.
+Read-only REST API serving obo flashcard decks from Postgres, with an embedded web UI for browsing decks in a browser.
 
 ## Stack
 - Python 3.12+, FastAPI, asyncpg
 - Package manager: uv
-- Port: **9810**
+- Port: **9810** (local), **8080** (Fly.io)
+
+## Deployment
+- **Live URL:** https://bd-obo-server.fly.dev
+- Deployed via `~/Flyz/scripts/deploy.sh obo-server`
+- Dockerfile at `~/Flyz/apps/obo-server/Dockerfile`
 
 ## Common Commands
 - `uv run obo-server` — start the API server (port 9810)
@@ -16,9 +21,13 @@ Read-only REST API serving obo flashcard decks from Postgres. Consumed by the ob
 
 | Method | Path | Description |
 |--------|------|-------------|
+| GET | `/` | Web UI — browse decks and flip through cards |
 | GET | `/api/v1/decks` | List all decks (supports `?age=`, `?limit=`, `?offset=`) |
 | GET | `/api/v1/decks/{id}` | Get deck with all cards |
 | GET | `/metrics` | Health metrics for server-monitor |
+
+## Web UI
+Single-page app at `static/index.html` — vanilla JS, no build step. Shows deck list with age-range filter, click-to-flip cards in detail view. Served by FastAPI's `StaticFiles` middleware.
 
 ## Database
 Reads from the `obo` database at `localhost:5433` (same Postgres as nagzerver).
@@ -48,6 +57,7 @@ Hub repo: `~/obo` (docs/planning only, no code)
 
 ## Architecture
 - Single-file FastAPI app (`obo_server.py`)
+- `static/index.html` — embedded web UI (vanilla JS, no build step)
 - asyncpg connection pool (2-10 connections)
 - No auth required — read-only public API
 - No ORM — raw SQL via asyncpg for simplicity
